@@ -1,0 +1,56 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #050505;
+  --color-glass: rgba(255, 255, 255, 0.03);
+  --color-glass-border: rgba(255, 255, 255, 0.08);
+}
+
+@layer base {
+  body {
+    @apply bg-background text-slate-200;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+}
+
+@layer components {
+  .glass {
+    @apply bg-glass backdrop-blur-[10px] border border-glass-border;
+  }
+
+  .nano-cell {
+    font-family: 'JetBrains Mono', 'Courier New', monospace;
+    @apply text-[10px] text-emerald-500 tracking-tighter;
+  }
+
+  .glow-emerald {
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.15);
+  }
+
+  .ghost-cursor {
+    animation: blink 1s infinite;
+  }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.animate-spin-slow {
+  animation: spin 3s linear infinite;
+}
+
+.animate-reverse-spin {
+  animation: reverse-spin 3s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes reverse-spin {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
