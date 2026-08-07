@@ -81,7 +81,7 @@ export default function LeadDashboard({ token, userEmail }: DashboardProps) {
     localStorage.setItem("sheetName", sheetName);
   }, [sheetName]);
 
-  const handleCreateSheet = async () => {
+  const handleCreateSheet = async (): Promise<string | null> => {
     setIsCreatingSheet(true);
     setHasRepairableError(false);
     setSystemStatus("Criando Planilha...");
@@ -96,9 +96,11 @@ export default function LeadDashboard({ token, userEmail }: DashboardProps) {
       ], token);
       
       setSystemStatus("Planilha Pronta");
+      return newId;
     } catch (err) {
       console.error("Failed to create sheet:", err);
       setSystemStatus("Erro ao criar planilha");
+      return null;
     } finally {
       setIsCreatingSheet(false);
     }
@@ -215,7 +217,10 @@ export default function LeadDashboard({ token, userEmail }: DashboardProps) {
       finalQuery = parts.join(" ");
     }
 
-    if (!finalQuery || !spreadsheetId) return;
+    if (!finalQuery) return;
+    // A pesquisa não fica bloqueada: criamos a planilha automaticamente quando necessário.
+    const targetSpreadsheetId = spreadsheetId || await handleCreateSheet();
+    if (!targetSpreadsheetId) return;
     setIsSearching(true);
     setHasRepairableError(false);
     setSystemStatus("Iniciando Protocolo de Varredura...");
@@ -274,7 +279,7 @@ export default function LeadDashboard({ token, userEmail }: DashboardProps) {
       }
 
       setSystemStatus("Sincronizando com G-Sheets Cloud...");
-      await appendToSheet(spreadsheetId, `${sheetName}!A:E`, detailedLeads, token);
+      await appendToSheet(targetSpreadsheetId, `${sheetName}!A:E`, detailedLeads, token);
       
       await fetchLeadsFromSheet();
       setSystemStatus(`Sucesso: ${detailedLeads.length} leads processados.`);
@@ -306,7 +311,9 @@ export default function LeadDashboard({ token, userEmail }: DashboardProps) {
       finalQuery = parts.join(" ");
     }
 
-    if (!finalQuery || !spreadsheetId) return;
+    if (!finalQuery) return;
+    const targetSpreadsheetId = spreadsheetId || await handleCreateSheet();
+    if (!targetSpreadsheetId) return;
     setIsSearching(true);
     setSystemStatus("Navegação Fantasma: Ignorando APIs...");
     
@@ -334,7 +341,7 @@ export default function LeadDashboard({ token, userEmail }: DashboardProps) {
       });
 
       setSystemStatus("Sincronizando Leads Ghost...");
-      await appendToSheet(spreadsheetId, `${sheetName}!A:E`, newLeadsValues, token);
+      await appendToSheet(targetSpreadsheetId, `${sheetName}!A:E`, newLeadsValues, token);
       await fetchLeadsFromSheet();
       
       setSystemStatus(`Sucesso: ${extractedLeads.length} leads processados.`);
@@ -642,7 +649,7 @@ function DorkHunterProcess(html) {
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] text-[#e2e8f0] font-sans flex flex-col p-6 gap-4">
+    <div className="map-surface min-h-screen bg-[#050505] text-[#e2e8f0] font-sans flex flex-col p-6 gap-4">
       {/* HEADER / STATUS BAR */}
       <header className="flex justify-between items-center glass p-4 rounded-xl">
         <div className="flex items-center gap-3">
@@ -912,7 +919,7 @@ function DorkHunterProcess(html) {
                               </div>
                               <button
                                 onClick={handleCapture}
-                                disabled={isSearching || !spreadsheetId || (!searchQuery && !filters.niche)}
+                                disabled={isSearching || isCreatingSheet || (!searchQuery && !filters.niche)}
                                 className={cn(
                                   "w-full md:w-auto h-[60px] px-12 rounded-2xl font-bold uppercase tracking-[0.2em] text-xs hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-30 disabled:grayscale flex items-center justify-center gap-3 shadow-xl",
                                   captureMode === "phantom" ? "bg-amber-500 text-black shadow-amber-500/20" : "bg-emerald-600 text-black shadow-emerald-600/20"
