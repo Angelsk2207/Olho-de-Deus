@@ -6,7 +6,6 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
 const provider = new GoogleAuthProvider();
-// Required Workspace scopes
 provider.addScope('https://www.googleapis.com/auth/spreadsheets');
 provider.addScope('https://www.googleapis.com/auth/gmail.send');
 
@@ -17,34 +16,44 @@ export const initAuth = (
   onAuthSuccess?: (user: User, token: string) => void,
   onAuthFailure?: () => void
 ) => {
-  // Recupera o login iniciado por redirecionamento (mais confiável em celular).
-  getRedirectResult(auth).then((result) => {
-    const credential = result && GoogleAuthProvider.credentialFromResult(result);
-    if (result?.user && credential?.accessToken) {
-      cachedAccessToken = credential.accessToken;
-      onAuthSuccess?.(result.user, credential.accessToken);
-    }
-  }).catch((error) => console.error('Redirect sign in error:', error));
+  let redirectChecked = false;
+  let latestUser: User | null = null;
 
-  return onAuthStateChanged(auth, async (user: User | null) => {
-    if (user) {
-      if (cachedAccessToken) {
-        if (onAuthSuccess) onAuthSuccess(user, cachedAccessToken);
-      } else if (!isSigningIn) {
-        // If we have a user but no cached token, we can't do much until they sign in again
-        // because Firebase doesn't expose the OAuth token indefinitely.
-        // However, for this build, we'll suggest re-auth if token is missing.
-        cachedAccessToken = null;
-        if (onAuthFailure) onAuthFailure();
-      }
-    } else {
-      cachedAccessToken = null;
-      if (onAuthFailure) onAuthFailure();
+  const notify = () => {
+    // Nunca derruba a tela enquanto o retorno do Google ainda está sendo processado.
+    if (!redirectChecked) return;
+    if (latestUser && cachedAccessToken) {
+      onAuthSuccess?.(latestUser, cachedAccessToken);
+    } else if (!latestUser && !isSigningIn) {
+      onAuthFailure?.();
     }
+  };
+
+  const unsubscribe = onAuthStateChanged(auth, (user: User | null) => {
+    latestUser = user;
+    notify();
   });
+
+  // O login por redirecionamento termina aqui, depois da aprovação no Google.
+  getRedirectResult(auth)
+    .then((result) => {
+      const credential = result && GoogleAuthProvider.credentialFromResult(result);
+      if (result?.user && credential?.accessToken) {
+        cachedAccessToken = credential.accessToken;
+        latestUser = result.user;
+      }
+    })
+    .catch((error) => console.error('Redirect sign in error:', error))
+    .finally(() => {
+      redirectChecked = true;
+      notify();
+    });
+
+  return unsubscribe;
 };
 
 export const googleRedirectSignIn = async (): Promise<void> => {
+  isSigningIn = true;
   await signInWithRedirect(auth, provider);
 };
 
@@ -54,22 +63,16 @@ export const googleSignIn = async (): Promise<{ user: User; accessToken: string 
     const result = await signInWithPopup(auth, provider);
     const credential = GoogleAuthProvider.credentialFromResult(result);
     if (!credential?.accessToken) {
-      throw new Error('Failed to get access token from Firebase Auth');
+      throw new Error('Não foi possível obter a autorização do Google.');
     }
-
     cachedAccessToken = credential.accessToken;
     return { user: result.user, accessToken: cachedAccessToken };
-  } catch (error: any) {
-    console.error('Sign in error:', error);
-    throw error;
   } finally {
     isSigningIn = false;
   }
 };
 
-export const getAccessToken = async (): Promise<string | null> => {
-  return cachedAccessToken;
-};
+export const getAccessToken = async (): Promise<string | null> => cachedAccessToken;
 
 export const logout = async () => {
   await auth.signOut();
