@@ -8,10 +8,21 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const app = express();
-const PORT = 3000;
+// Render and other cloud hosts provide PORT dynamically.
+const PORT = Number(process.env.PORT) || 3000;
 
 // Middleware
-app.use(express.json());
+app.use(express.json({ limit: "2mb" }));
+
+// Lightweight health endpoint for deployment monitoring.
+app.get("/health", (_req, res) => {
+  res.json({
+    ok: true,
+    service: "olho-que-tudo-ve",
+    aiConfigured: Boolean(process.env.GEMINI_API_KEY),
+    mapsConfigured: Boolean(process.env.GOOGLE_MAPS_API_KEY),
+  });
+});
 
 // Gemini Initialization
 const ai = new GoogleGenAI({
@@ -147,10 +158,15 @@ app.get("/api/maps/search", async (req, res) => {
       return res.status(400).json({ error: "Search query is required" });
     }
 
-    const apiKey = process.env.GOOGLE_MAPS_API_KEY || "AIzaSyBYCt9hXDuT9Q7p9wMuu5pjVknkmDUrKR4";
-    const isFallback = !process.env.GOOGLE_MAPS_API_KEY;
-    
-    console.log(`[MAPS] Searching (New API) for: ${query} ${isFallback ? '(USING FALLBACK KEY)' : ''}`);
+    const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+    if (!apiKey) {
+      return res.status(503).json({
+        error: "Pesquisa de mapas indisponível",
+        details: "Configure GOOGLE_MAPS_API_KEY no servidor para ativar esta fonte.",
+      });
+    }
+
+    console.log(`[MAPS] Searching (New API) for: ${query}`);
     
     const response = await axios.post(
       `https://places.googleapis.com/v1/places:searchText`,
@@ -205,10 +221,15 @@ app.get("/api/maps/details", async (req, res) => {
       return res.status(400).json({ error: "placeId is required" });
     }
 
-    const apiKey = process.env.GOOGLE_MAPS_API_KEY || "AIzaSyBYCt9hXDuT9Q7p9wMuu5pjVknkmDUrKR4";
-    const isFallback = !process.env.GOOGLE_MAPS_API_KEY;
+    const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+    if (!apiKey) {
+      return res.status(503).json({
+        error: "Detalhes de mapas indisponíveis",
+        details: "Configure GOOGLE_MAPS_API_KEY no servidor para ativar esta fonte.",
+      });
+    }
 
-    console.log(`[MAPS] Fetching Details for: ${placeId} ${isFallback ? '(USING FALLBACK KEY)' : ''}`);
+    console.log(`[MAPS] Fetching Details for: ${placeId}`);
     
     const response = await axios.get(
       `https://places.googleapis.com/v1/places/${placeId}`,
