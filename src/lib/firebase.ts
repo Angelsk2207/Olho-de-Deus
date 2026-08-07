@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, User } from 'firebase/auth';
+import { getAuth, signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider, onAuthStateChanged, User } from 'firebase/auth';
 import firebaseConfig from '../../firebase-applet-config.json';
 
 const app = initializeApp(firebaseConfig);
@@ -17,6 +17,15 @@ export const initAuth = (
   onAuthSuccess?: (user: User, token: string) => void,
   onAuthFailure?: () => void
 ) => {
+  // Recupera o login iniciado por redirecionamento (mais confiável em celular).
+  getRedirectResult(auth).then((result) => {
+    const credential = result && GoogleAuthProvider.credentialFromResult(result);
+    if (result?.user && credential?.accessToken) {
+      cachedAccessToken = credential.accessToken;
+      onAuthSuccess?.(result.user, credential.accessToken);
+    }
+  }).catch((error) => console.error('Redirect sign in error:', error));
+
   return onAuthStateChanged(auth, async (user: User | null) => {
     if (user) {
       if (cachedAccessToken) {
@@ -33,6 +42,10 @@ export const initAuth = (
       if (onAuthFailure) onAuthFailure();
     }
   });
+};
+
+export const googleRedirectSignIn = async (): Promise<void> => {
+  await signInWithRedirect(auth, provider);
 };
 
 export const googleSignIn = async (): Promise<{ user: User; accessToken: string } | null> => {
