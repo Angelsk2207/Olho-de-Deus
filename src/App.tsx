@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { LogIn, FileSpreadsheet, ExternalLink, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { initAuth, googleSignIn, logout } from './lib/firebase';
+import { initAuth, googleSignIn, googleRedirectSignIn, logout } from './lib/firebase';
 import LeadDashboard from './components/LeadDashboard';
 import { User } from 'firebase/auth';
 
@@ -10,6 +10,7 @@ export default function App() {
   const [token, setToken] = useState<string | null>(null);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [needsAuth, setNeedsAuth] = useState(true);
+  const [loginError, setLoginError] = useState('');
 
   useEffect(() => {
     // Note: initAuth won't give us the token because Auth state doesn't persist OAuth tokens.
@@ -27,6 +28,7 @@ export default function App() {
 
   const handleLogin = async () => {
     setIsLoggingIn(true);
+    setLoginError('');
     try {
       const result = await googleSignIn();
       if (result) {
@@ -34,8 +36,18 @@ export default function App() {
         setToken(result.accessToken);
         setNeedsAuth(false);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Login failed:', err);
+      // Popup costuma ser bloqueado em celulares; o redirecionamento funciona melhor.
+      if (err?.code === 'auth/popup-blocked' || err?.code === 'auth/popup-closed-by-user' || err?.code === 'auth/operation-not-supported-in-this-environment') {
+        try {
+          await googleRedirectSignIn();
+          return;
+        } catch (redirectError) {
+          console.error('Redirect login failed:', redirectError);
+        }
+      }
+      setLoginError('Não foi possível abrir o Google. Toque novamente ou permita pop-ups para este site.');
     } finally {
       setIsLoggingIn(false);
     }
@@ -82,6 +94,11 @@ export default function App() {
                 </>
               )}
             </button>
+            {loginError && (
+              <p className="text-xs text-red-300 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-3" role="alert">
+                {loginError}
+              </p>
+            )}
 
             <div className="flex items-center justify-center gap-6 text-[9px] text-zinc-600 uppercase tracking-widest font-bold">
                <div className="flex items-center gap-1.5">
