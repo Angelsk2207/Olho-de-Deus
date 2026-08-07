@@ -63,7 +63,7 @@ export default function App() {
                Olho que <span className="text-emerald-500">Tudo Vê</span>
             </h1>
             <p className="text-zinc-500 text-[10px] uppercase tracking-[0.3em] font-bold">
-               Growth Machine • Open Source Edition
+               Prospecção Inteligente • CRM Comercial
             </p>
           </header>
 
