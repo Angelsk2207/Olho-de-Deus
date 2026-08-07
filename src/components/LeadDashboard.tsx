@@ -652,9 +652,9 @@ function DorkHunterProcess(html) {
           <div>
             <h1 className="text-lg font-bold tracking-tight text-white uppercase">
               Olho que <span className="text-emerald-500">Tudo Vê</span>
-              <span className="text-emerald-500 text-[10px] ml-2 font-mono">v3.1 BUILD</span>
+              <span className="text-emerald-500 text-[10px] ml-2 font-mono">v4.0 PROSPECÇÃO + CRM</span>
             </h1>
-            <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-semibold">Growth Machine • Open Source Edition</p>
+            <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-semibold">Prospecção Inteligente • CRM Comercial</p>
           </div>
         </div>
         <div className="flex gap-8 items-center">
@@ -711,7 +711,7 @@ function DorkHunterProcess(html) {
                     <div className="max-w-2xl space-y-6">
                       <h2 className="text-2xl font-bold tracking-tight text-white uppercase italic">Extração de Alta Precisão</h2>
                       <p className="text-zinc-500 text-sm leading-relaxed">
-                        Inicie o agente de varredura profunda. O Olho que Tudo Vê identifica oportunidades geolocalizadas e decodifica contatos via protocolo Dorking.
+                        Descreva o tipo de empresa que você procura. O Olho que Tudo Vê encontra oportunidades em fontes públicas, organiza os leads e prepara o próximo passo comercial.
                       </p>
                       
                       <div className="space-y-4">
