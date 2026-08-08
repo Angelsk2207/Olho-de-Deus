@@ -23,7 +23,14 @@ function normalize(item: any, index: number): Lead {
 }
 function dedupe(leads: Lead[]) { const seen = new Set<string>(); return leads.filter(l => { const key = `${l.name.toLowerCase()}|${l.address.toLowerCase()}`; if (seen.has(key)) return false; seen.add(key); return true; }); }
 async function collect(query: string): Promise<Lead[]> {
-  const response = await axios.get("https://photon.komoot.io/api/", { params: { q: query.slice(0, 180), limit: 20, lang: "pt" }, headers: { "User-Agent": "OlhoDeDeus/2.0 (public-osint; contact: lead-search)" }, timeout: 12000 });
+  const normalizedQuery = query
+    .replace(/\bpadarias\b/gi, "padaria")
+    .replace(/\bclínicas\b/gi, "clínica")
+    .replace(/\bacademias\b/gi, "academia")
+    .replace(/\s+\b(em|no|na|do|da)\b\s+/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  const response = await axios.get("https://photon.komoot.io/api/", { params: { q: normalizedQuery.slice(0, 180), limit: 20, lang: "pt" }, headers: { "User-Agent": "OlhoDeDeus/2.0 (public-osint; contact: lead-search)" }, timeout: 12000 });
   return dedupe((response.data?.features || []).map(normalize));
 }
 async function pipeline(query: string, emit: (stage: string, message: string, count?: number) => void) {
