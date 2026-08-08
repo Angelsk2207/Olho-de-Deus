@@ -161,7 +161,7 @@ app.get("/api/maps/search", async (req, res) => {
     const apiKey = process.env.GOOGLE_MAPS_API_KEY;
     if (!apiKey) {
       const fallback = await axios.get("https://photon.komoot.io/api/", {
-        params: { q: String(query), limit: 10 },
+        params: { q: String(query).replace(/\bpadarias\b/gi, "padaria").replace(/\bclínicas\b/gi, "clínica").replace(/\bacademias\b/gi, "academia"), limit: 10 },
         headers: { "User-Agent": "Olho-de-Deus/1.0 (lead-search)" },
       });
       return res.json((fallback.data?.features || []).map((item: any) => {
@@ -209,7 +209,7 @@ app.get("/api/maps/search", async (req, res) => {
     // resultados reais do OpenStreetMap para a busca não ficar travada.
     try {
       const fallback = await axios.get("https://photon.komoot.io/api/", {
-        params: { q: String(req.query.query), limit: 10 },
+        params: { q: String(req.query.query).replace(/\bpadarias\b/gi, "padaria").replace(/\bclínicas\b/gi, "clínica").replace(/\bacademias\b/gi, "academia"), limit: 10 },
         headers: { "User-Agent": "Olho-de-Deus/1.0 (lead-search)" },
       });
       const fallbackResults = (fallback.data?.features || []).map((item: any) => {
