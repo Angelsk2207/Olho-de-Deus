@@ -6,7 +6,17 @@
     <title>Olho de Deus — Prospecção Inteligente</title>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div id="boot-screen" style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f7f9fc;color:#1d6b62;font:600 16px Arial,sans-serif;text-align:center;padding:24px">
+        <div><div style="font-size:28px;margin-bottom:12px">◉</div><div>Carregando o Olho de Deus…</div><small style="display:block;color:#83909c;font-weight:400;margin-top:8px">Preparando a busca OSINT</small></div>
+      </div>
+    </div>
+    <script>
+      window.addEventListener('error', function () {
+        var root = document.getElementById('root');
+        if (root && root.querySelector('#boot-screen')) root.innerHTML = '<div style="padding:32px;font:16px Arial;color:#24323b;text-align:center">Não foi possível carregar a plataforma. Feche esta aba e abra novamente o link.</div>';
+      });
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
