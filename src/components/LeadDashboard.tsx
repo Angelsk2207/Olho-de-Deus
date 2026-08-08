@@ -219,14 +219,17 @@ export default function LeadDashboard({ token, userEmail }: DashboardProps) {
       finalQuery = parts.join(" ");
     }
 
-    if (!finalQuery) return;
+    if (!finalQuery) {
+      setSystemStatus("Digite um nicho ou palavra-chave para iniciar a busca.");
+      return;
+    }
     // Modo local: os resultados ficam na tabela da plataforma até a exportação.
     const targetSpreadsheetId = spreadsheetId;
     setIsSearching(true);
     setHasRepairableError(false);
     setSystemStatus("Iniciando Protocolo de Varredura...");
     try {
-      setSystemStatus("Escaneando Google Maps (Engine V1)...");
+      setSystemStatus("Consultando fontes públicas...");
       const response = await axios.get(`/api/maps/search?query=${encodeURIComponent(finalQuery)}`);
       const mapsResults = response.data;
       
@@ -729,8 +732,8 @@ function DorkHunterProcess(html) {
           </div>
           <div className="h-8 w-px bg-zinc-800"></div>
           <div className="flex gap-2">
-            <span className="px-2 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-[10px] rounded font-mono">G-CLOUD: ONLINE</span>
-            <span className="px-2 py-1 bg-amber-500/10 border border-amber-500/20 text-amber-500 text-[10px] rounded font-mono">GHOST: ACTIVE</span>
+            <span className="px-2 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-[10px] rounded font-mono">BUSCA PÚBLICA: ONLINE</span>
+            <span className="px-2 py-1 bg-blue-500/10 border border-blue-500/20 text-blue-300 text-[10px] rounded font-mono">MODO LOCAL</span>
           </div>
         </div>
       </header>
@@ -746,7 +749,7 @@ function DorkHunterProcess(html) {
           <NavItem icon={<Send size={20} />} active={activeTab === "outreach"} onClick={() => setActiveTab("outreach")} label="Disparo" />
           
           <div className="mt-auto border-t border-white/5 pt-6 w-full flex justify-center">
-            <FileSpreadsheet className="text-zinc-600 hover:text-white cursor-pointer transition-colors" size={20} onClick={fetchLeadsFromSheet} />
+            <FileSpreadsheet className="text-zinc-600" size={20} />
           </div>
         </nav>
 
@@ -757,8 +760,8 @@ function DorkHunterProcess(html) {
             <div className="bg-white/5 p-3 flex justify-between items-center border-b border-white/10">
               <h2 className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest flex items-center gap-2">
                 <Activity size={14} className="text-emerald-500" />
-                {activeTab === "capture" ? "Agente Captador (Dorks/Maps)" : 
-                 activeTab === "leads" ? "Google Sheets Nano-Storage" :
+                {activeTab === "capture" ? "Agente de Busca Pública" : 
+                 activeTab === "leads" ? "Tabela de Leads" :
                  activeTab === "campaign" ? "Intelligence Strategy" : "Ghost Protocol Flow"}
               </h2>
               <span className="text-[10px] text-zinc-500 font-mono">
@@ -781,21 +784,9 @@ function DorkHunterProcess(html) {
                         <div className="flex gap-2 p-1 bg-white/5 rounded-2xl border border-white/5 w-fit">
                           <button
                             onClick={() => setCaptureMode("api")}
-                            className={cn(
-                              "px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all",
-                              captureMode === "api" ? "bg-emerald-500 text-black shadow-lg shadow-emerald-500/20" : "text-zinc-500 hover:text-white"
-                            )}
+                            className="px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest bg-emerald-500 text-black shadow-lg shadow-emerald-500/20"
                           >
-                            Engine V1 (API Maps)
-                          </button>
-                          <button
-                            onClick={() => setCaptureMode("phantom")}
-                            className={cn(
-                              "px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all",
-                              captureMode === "phantom" ? "bg-amber-500 text-black shadow-lg shadow-amber-500/20" : "text-zinc-500 hover:text-white"
-                            )}
-                          >
-                            Engine Ghost (Grounding)
+                            Busca Pública
                           </button>
                         </div>
 
@@ -964,7 +955,7 @@ function DorkHunterProcess(html) {
                               </div>
                               <button
                                 onClick={handleCapture}
-                                disabled={isSearching || isCreatingSheet || (!searchQuery && !filters.niche)}
+                                disabled={isSearching || isCreatingSheet}
                                 className={cn(
                                   "w-full md:w-auto h-[60px] px-12 rounded-2xl font-bold uppercase tracking-[0.2em] text-xs hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-30 disabled:grayscale flex items-center justify-center gap-3 shadow-xl",
                                   captureMode === "phantom" ? "bg-amber-500 text-black shadow-amber-500/20" : "bg-emerald-600 text-black shadow-emerald-600/20"
@@ -975,13 +966,13 @@ function DorkHunterProcess(html) {
                                 ) : (
                                   <>
                                     <Play size={18} fill="currentColor" /> 
-                                    {captureMode === "phantom" ? "Evocar Navegação" : "Iniciar Varredura"}
+                                    Iniciar Busca
                                   </>
                                 )}
                               </button>
                             </div>
                             <p className="text-[8px] text-zinc-700 uppercase mt-4 text-center tracking-[0.3em] font-mono">
-                              {captureMode === "phantom" ? "O Olho usará grounding IA para varrer a web sem API" : "O motor de varredura iniciará o protocolo de extração de dados via Places API"}
+                              O motor consulta fontes públicas e mostra cada resultado na tabela.
                             </p>
                           </div>
                       </div>
