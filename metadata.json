@@ -1,8 +1,5 @@
 {
-  "name": "Olho de Deus - Growth Engine",
-  "description": "Engenharia de Growth e Prospecção Autônoma com IA. Captura leads via Google Maps/Dorks e automatiza disparos multicanal (WhatsApp, Email, SMS) via Google Sheets.",
-  "requestFramePermissions": [],
-  "majorCapabilities": [
-    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
-  ]
+  "name": "Olho de Deus",
+  "description": "Prospecção autônoma com OSINT público, agentes de coleta e tabela local.",
+  "capabilities": ["public-source-capture", "normalization", "deduplication", "confidence-scoring", "live-progress"]
 }
