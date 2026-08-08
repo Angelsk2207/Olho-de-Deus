@@ -682,9 +682,9 @@ function DorkHunterProcess(html) {
   };
 
   return (
-    <div className="map-surface min-h-screen bg-[#050505] text-[#e2e8f0] font-sans flex flex-col p-6 gap-4">
+    <div className="map-surface min-h-screen bg-[#050505] text-[#e2e8f0] font-sans flex flex-col p-3 sm:p-6 gap-3 sm:gap-4">
       {/* HEADER / STATUS BAR */}
-      <header className="flex justify-between items-center glass p-4 rounded-xl">
+      <header className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 glass p-3 sm:p-4 rounded-xl">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-emerald-500 rounded-full flex items-center justify-center glow-emerald">
              <Target size={24} className="text-black" />
@@ -697,7 +697,7 @@ function DorkHunterProcess(html) {
             <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-semibold">Prospecção Inteligente • CRM Comercial</p>
           </div>
         </div>
-        <div className="flex gap-8 items-center">
+        <div className="flex flex-wrap gap-3 sm:gap-8 items-center justify-between sm:justify-end">
           <div className="text-right">
             <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Status do Sistema</p>
             <p className="text-sm font-medium flex items-center gap-2 justify-end">
@@ -714,9 +714,9 @@ function DorkHunterProcess(html) {
       </header>
 
       {/* MAIN GRID */}
-      <div className="flex-1 grid grid-cols-12 gap-4 min-h-0">
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 min-h-0">
         {/* Sidebar / Navigation */}
-        <nav className="col-span-1 glass rounded-xl flex flex-col items-center py-8 gap-10">
+        <nav className="col-span-1 lg:col-span-1 glass rounded-xl flex flex-row lg:flex-col items-center justify-around lg:justify-start py-3 lg:py-8 px-2 lg:px-0 gap-2 lg:gap-10">
           <NavItem icon={<Target size={20} />} active={activeTab === "capture"} onClick={() => setActiveTab("capture")} label="Captura" />
           <NavItem icon={<Activity size={20} className="text-red-500" />} active={activeTab === "dork"} onClick={() => setActiveTab("dork")} label="Dork Hunter" />
           <NavItem icon={<Users size={20} />} active={activeTab === "leads"} onClick={() => setActiveTab("leads")} label="Leads" />
@@ -729,9 +729,9 @@ function DorkHunterProcess(html) {
         </nav>
 
         {/* Dynamic Content Col */}
-        <div className="col-span-11 grid grid-cols-12 gap-4 h-full">
+        <div className="col-span-1 lg:col-span-11 grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 h-full min-w-0">
           {/* Main Workspace Area */}
-          <section className="col-span-9 glass rounded-xl flex flex-col overflow-hidden">
+          <section className="col-span-1 lg:col-span-9 glass rounded-xl flex flex-col overflow-hidden min-w-0">
             <div className="bg-white/5 p-3 flex justify-between items-center border-b border-white/10">
               <h2 className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest flex items-center gap-2">
                 <Activity size={14} className="text-emerald-500" />
@@ -966,7 +966,7 @@ function DorkHunterProcess(html) {
                     </div>
                   </div>
 
-                    <div className="mt-auto grid grid-cols-3 gap-4">
+                    <div className="mt-auto grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                        <StatCard label="Leads Totais" value={leads.length} />
                        <StatCard label="Aguardando" value={leads.filter(l => l.status === "PENDENTE").length} color="text-amber-500" />
                        <StatCard label="Sucesso" value={leads.filter(l => l.status === "ENVIADO").length} color="text-emerald-500" />
@@ -1043,8 +1043,8 @@ function DorkHunterProcess(html) {
                 )}
 
                 {activeTab === "outreach" && (
-                  <motion.div key="outreach" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="p-8 h-full grid grid-cols-12 gap-8">
-                     <div className="col-span-4 flex flex-col items-center justify-center text-center space-y-8 glass p-8 rounded-3xl bg-black/20">
+                  <motion.div key="outreach" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="p-4 sm:p-8 h-full grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-8">
+                     <div className="col-span-1 lg:col-span-4 flex flex-col items-center justify-center text-center space-y-8 glass p-5 sm:p-8 rounded-3xl bg-black/20">
                         <div className="relative">
                            <div className={cn("w-32 h-32 rounded-full border border-emerald-500/20 flex items-center justify-center glow-emerald", isSending ? "animate-spin-slow" : "")}>
                               <Send className="text-emerald-500" size={40} />
@@ -1077,7 +1077,7 @@ function DorkHunterProcess(html) {
                          </button>
                      </div>
 
-                     <div className="col-span-8 flex flex-col gap-4">
+                     <div className="col-span-1 lg:col-span-8 flex flex-col gap-4 min-w-0">
                         <div className="glass bg-black/40 rounded-2xl p-6 flex-1 flex flex-col border border-white/5 relative overflow-hidden">
                            <div className="flex items-center justify-between mb-4 border-b border-white/10 pb-4">
                               <div className="flex items-center gap-2">
@@ -1141,7 +1141,7 @@ function DorkHunterProcess(html) {
           </section>
 
           {/* Right Col: Design Context */}
-          <aside className="col-span-3 flex flex-col gap-4 min-h-0">
+          <aside className="col-span-1 lg:col-span-3 flex flex-col gap-4 min-h-0">
              <div className="glass rounded-xl p-4 flex flex-col flex-1 overflow-hidden">
                 <h2 className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-4">Prompt Engineering</h2>
                 <div className="flex-1 glass bg-black/50 p-3 rounded-lg border border-white/5 font-mono text-[9px] text-emerald-300 leading-relaxed overflow-auto scroll-none">
