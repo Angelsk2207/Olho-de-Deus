@@ -160,16 +160,19 @@ app.get("/api/maps/search", async (req, res) => {
 
     const apiKey = process.env.GOOGLE_MAPS_API_KEY;
     if (!apiKey) {
-      const fallback = await axios.get("https://nominatim.openstreetmap.org/search", {
-        params: { q: String(query), format: "jsonv2", limit: 10, addressdetails: 1 },
+      const fallback = await axios.get("https://photon.komoot.io/api/", {
+        params: { q: String(query), limit: 10 },
         headers: { "User-Agent": "Olho-de-Deus/1.0 (lead-search)" },
       });
-      return res.json((fallback.data || []).map((item: any) => ({
-        place_id: `osm:${item.osm_type}:${item.osm_id}`,
-        name: item.name || item.display_name?.split(",")[0] || "Local encontrado",
-        formatted_address: item.display_name || "Endereço não informado",
-        rating: 0,
-      })));
+      return res.json((fallback.data?.features || []).map((item: any) => {
+        const p = item.properties || {};
+        return {
+          place_id: `osm:${p.osm_type || "feature"}:${p.osm_id || Math.random()}`,
+          name: p.name || "Local encontrado",
+          formatted_address: [p.street, p.housenumber, p.city, p.state, p.country].filter(Boolean).join(", "),
+          rating: 0,
+        };
+      }));
     }
 
     console.log(`[MAPS] Searching (New API) for: ${query}`);
@@ -205,16 +208,19 @@ app.get("/api/maps/search", async (req, res) => {
     // Fallback público: se o Google Places não estiver habilitado, ainda entregamos
     // resultados reais do OpenStreetMap para a busca não ficar travada.
     try {
-      const fallback = await axios.get("https://nominatim.openstreetmap.org/search", {
-        params: { q: String(req.query.query), format: "jsonv2", limit: 10, addressdetails: 1 },
+      const fallback = await axios.get("https://photon.komoot.io/api/", {
+        params: { q: String(req.query.query), limit: 10 },
         headers: { "User-Agent": "Olho-de-Deus/1.0 (lead-search)" },
       });
-      const fallbackResults = (fallback.data || []).map((item: any) => ({
-        place_id: `osm:${item.osm_type}:${item.osm_id}`,
-        name: item.name || item.display_name?.split(",")[0] || "Local encontrado",
-        formatted_address: item.display_name || "Endereço não informado",
-        rating: 0,
-      }));
+      const fallbackResults = (fallback.data?.features || []).map((item: any) => {
+        const p = item.properties || {};
+        return {
+          place_id: `osm:${p.osm_type || "feature"}:${p.osm_id || Math.random()}`,
+          name: p.name || "Local encontrado",
+          formatted_address: [p.street, p.housenumber, p.city, p.state, p.country].filter(Boolean).join(", "),
+          rating: 0,
+        };
+      });
       if (fallbackResults.length) {
         console.log(`[MAPS FALLBACK] Found ${fallbackResults.length} results via OpenStreetMap`);
         return res.json(fallbackResults);
