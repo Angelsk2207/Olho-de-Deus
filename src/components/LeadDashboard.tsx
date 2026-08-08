@@ -86,7 +86,7 @@ export default function LeadDashboard({ token, userEmail }: DashboardProps) {
     setHasRepairableError(false);
     setSystemStatus("Criando Planilha...");
     try {
-      const response = await createSheet("Base de Leads - Olho que Tudo Vê", token);
+      const response = await createSheet("Base de Leads - Olho de Deus", token);
       const newId = response.spreadsheetId;
       setSpreadsheetId(newId);
       
@@ -540,7 +540,7 @@ function DorkHunterProcess(html) {
       
       const response = await axios.post("/api/gemini/generate", {
         prompt,
-        systemInstruction: "Você é o motor Olho que Tudo Vê, um Engenheiro de Growth especializado em conversão B2B."
+        systemInstruction: "Você é o motor Olho de Deus, um Engenheiro de Growth especializado em conversão B2B."
       });
       setCampaignCopy(response.data.text);
       setSystemStatus("Estratégia Pronta");
@@ -656,7 +656,7 @@ function DorkHunterProcess(html) {
     const doc = new jsPDF();
     
     doc.setFontSize(18);
-    doc.text("Relatório de Leads - Olho que Tudo Vê", 14, 22);
+    doc.text("Relatório de Leads - Olho de Deus", 14, 22);
     doc.setFontSize(10);
     doc.text(`Data de Exportação: ${new Date().toLocaleString()}`, 14, 30);
     doc.text(`Total de Leads: ${leads.length}`, 14, 35);
@@ -691,7 +691,7 @@ function DorkHunterProcess(html) {
           </div>
           <div>
             <h1 className="text-lg font-bold tracking-tight text-white uppercase">
-              Olho que <span className="text-emerald-500">Tudo Vê</span>
+              Olho <span className="text-emerald-500">de Deus</span>
               <span className="text-emerald-500 text-[10px] ml-2 font-mono">v4.0 PROSPECÇÃO + CRM</span>
             </h1>
             <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-semibold">Prospecção Inteligente • CRM Comercial</p>
@@ -751,7 +751,7 @@ function DorkHunterProcess(html) {
                     <div className="max-w-2xl space-y-6">
                       <h2 className="text-2xl font-bold tracking-tight text-white uppercase italic">Extração de Alta Precisão</h2>
                       <p className="text-zinc-500 text-sm leading-relaxed">
-                        Descreva o tipo de empresa que você procura. O Olho que Tudo Vê encontra oportunidades em fontes públicas, organiza os leads e prepara o próximo passo comercial.
+                        Descreva o tipo de empresa que você procura. O Olho de Deus encontra oportunidades em fontes públicas, organiza os leads e prepara o próximo passo comercial.
                       </p>
                       
                       <div className="space-y-4">
