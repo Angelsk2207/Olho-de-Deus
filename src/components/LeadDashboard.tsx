@@ -51,6 +51,8 @@ export default function LeadDashboard({ token, userEmail }: DashboardProps) {
   });
   const [leads, setLeads] = useState<Lead[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [searchStep, setSearchStep] = useState(0);
+  const [searchTotal, setSearchTotal] = useState(0);
   const [isSending, setIsSending] = useState(false);
   const [campaignCopy, setCampaignCopy] = useState("");
   const [systemStatus, setSystemStatus] = useState<string>("Operacional");
@@ -233,7 +235,9 @@ export default function LeadDashboard({ token, userEmail }: DashboardProps) {
         return;
       }
 
-      setSystemStatus(`Decodificando ${mapsResults.length} locais...`);
+      setSearchTotal(mapsResults.length);
+      setSearchStep(0);
+      setSystemStatus(`Encontradas ${mapsResults.length} oportunidades. Preparando extração...`);
       
       const detailedLeads = [];
       // Use Promise.all to fetch details in parallel (max 5 at a time for safety)
@@ -243,6 +247,12 @@ export default function LeadDashboard({ token, userEmail }: DashboardProps) {
         setSystemStatus(`Extraindo lote ${Math.floor(i / CHUNK_SIZE) + 1}/${Math.ceil(mapsResults.length / CHUNK_SIZE)}...`);
         
         const chunkPromises = chunk.map(async (place) => {
+          // Resultados do fallback OpenStreetMap já chegam completos o bastante
+          // para entrar na tabela sem depender de uma segunda chamada.
+          if (String(place.place_id).startsWith("osm:")) {
+            const nano = `${place.name}|Sem Telefone|Explorar Domínio|Sem Site|0`;
+            return [new Date().toISOString(), place.name, place.formatted_address || "Endereço não informado", nano, "PENDENTE"];
+          }
           try {
             const detailRes = await axios.get(`/api/maps/details?placeId=${place.place_id}`);
             const details = detailRes.data;
@@ -275,6 +285,7 @@ export default function LeadDashboard({ token, userEmail }: DashboardProps) {
 
         const chunkResults = await Promise.all(chunkPromises);
         detailedLeads.push(...chunkResults);
+        setSearchStep(Math.min(i + chunk.length, mapsResults.length));
       }
 
       if (targetSpreadsheetId && token) {
@@ -704,6 +715,17 @@ function DorkHunterProcess(html) {
                <span className={cn("w-1.5 h-1.5 rounded-full animate-pulse", isSearching || isSending ? "bg-amber-500" : "bg-emerald-500")} />
                {systemStatus}
             </p>
+            {isSearching && searchTotal > 0 && (
+              <div className="mt-2 w-44 sm:w-56">
+                <div className="flex justify-between text-[9px] text-emerald-400 font-mono uppercase">
+                  <span>Busca {Math.min(searchStep + 1, searchTotal)} de {searchTotal}</span>
+                  <span>{Math.round((searchStep / searchTotal) * 100)}%</span>
+                </div>
+                <div className="h-1 mt-1 rounded-full bg-zinc-800 overflow-hidden">
+                  <div className="h-full bg-emerald-500 transition-all duration-300" style={{ width: `${Math.max(5, (searchStep / searchTotal) * 100)}%` }} />
+                </div>
+              </div>
+            )}
           </div>
           <div className="h-8 w-px bg-zinc-800"></div>
           <div className="flex gap-2">
