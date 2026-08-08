@@ -1,5 +1,5 @@
 /**
- * Olho que Tudo Vê - Agente Extrator de HTML (Dorks)
+ * Olho de Deus - Agente Extrator de HTML (Dorks)
  * 
  * Este script deve ser colado no Editor de Scripts (Extensions > Apps Script)
  * do seu Google Sheets. Ele analisa resultados de busca e extrai leads.
@@ -86,7 +86,7 @@ function extractLeadsFromText(text) {
  */
 function onOpen() {
   const ui = SpreadsheetApp.getUi();
-  ui.createMenu('👁️ Olho que Tudo Vê')
+  ui.createMenu('👁️ Olho de Deus')
     .addItem('🚀 Iniciar Varredura Dork', 'runLeadScraper')
     .addToUi();
 }
