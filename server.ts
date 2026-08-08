@@ -18,7 +18,7 @@ app.use(express.json({ limit: "2mb" }));
 app.get("/health", (_req, res) => {
   res.json({
     ok: true,
-    service: "olho-que-tudo-ve",
+    service: "olho-de-deus",
     aiConfigured: Boolean(process.env.GEMINI_API_KEY),
     mapsConfigured: Boolean(process.env.GOOGLE_MAPS_API_KEY),
   });
