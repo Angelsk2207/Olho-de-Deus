@@ -12,7 +12,3 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      - key: GEMINI_API_KEY
-        sync: false
-      - key: GOOGLE_MAPS_API_KEY
-        sync: false
