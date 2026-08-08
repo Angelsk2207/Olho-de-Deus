@@ -30,7 +30,7 @@ async function collect(query: string): Promise<Lead[]> {
     .replace(/\s+\b(em|no|na|do|da)\b\s+/gi, " ")
     .replace(/\s+/g, " ")
     .trim();
-  const response = await axios.get("https://photon.komoot.io/api/", { params: { q: normalizedQuery.slice(0, 180), limit: 20, lang: "pt" }, headers: { "User-Agent": "OlhoDeDeus/2.0 (public-osint; contact: lead-search)" }, timeout: 12000 });
+  const response = await axios.get("https://photon.komoot.io/api/", { params: { q: normalizedQuery.slice(0, 180), limit: 20 }, headers: { "User-Agent": "OlhoDeDeus/2.0 (public-osint; contact: lead-search)" }, timeout: 12000 });
   return dedupe((response.data?.features || []).map(normalize));
 }
 async function pipeline(query: string, emit: (stage: string, message: string, count?: number) => void) {
