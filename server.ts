@@ -158,6 +158,22 @@ app.get("/api/maps/search", async (req, res) => {
       return res.status(400).json({ error: "Search query is required" });
     }
 
+    // Busca pública independente: não usa Google, Gemini, Ghost ou login.
+    const publicSearch = await axios.get("https://photon.komoot.io/api/", {
+      params: { q: String(query).replace(/\bpadarias\b/gi, "padaria").replace(/\bclínicas\b/gi, "clínica").replace(/\bacademias\b/gi, "academia"), limit: 10 },
+      headers: { "User-Agent": "Olho-de-Deus/1.0 (lead-search)" },
+    });
+    const publicResults = (publicSearch.data?.features || []).map((item: any) => {
+      const p = item.properties || {};
+      return {
+        place_id: `osm:${p.osm_type || "feature"}:${p.osm_id || Math.random()}`,
+        name: p.name || "Empresa encontrada",
+        formatted_address: [p.street, p.housenumber, p.city, p.state, p.country].filter(Boolean).join(", "),
+        rating: 0,
+      };
+    });
+    return res.json(publicResults);
+
     const apiKey = process.env.GOOGLE_MAPS_API_KEY;
     if (!apiKey) {
       const fallback = await axios.get("https://photon.komoot.io/api/", {
