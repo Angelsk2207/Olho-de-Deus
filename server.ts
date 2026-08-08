@@ -1,344 +1,67 @@
 import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
-import { GoogleGenAI } from "@google/genai";
 import axios from "axios";
 import dotenv from "dotenv";
 
 dotenv.config();
-
 const app = express();
-// Render and other cloud hosts provide PORT dynamically.
 const PORT = Number(process.env.PORT) || 3000;
+app.use(express.json({ limit: "1mb" }));
 
-// Middleware
-app.use(express.json({ limit: "2mb" }));
-
-// Lightweight health endpoint for deployment monitoring.
-app.get("/health", (_req, res) => {
-  res.json({
-    ok: true,
-    service: "olho-de-deus",
-    aiConfigured: Boolean(process.env.GEMINI_API_KEY),
-    mapsConfigured: Boolean(process.env.GOOGLE_MAPS_API_KEY),
-  });
-});
-
-// Gemini Initialization
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY || "",
-  httpOptions: {
-    headers: {
-      'User-Agent': 'aistudio-build',
-    }
-  }
-});
-
-// APIs
-app.post("/api/gemini/generate", async (req, res) => {
-  try {
-    const { prompt, systemInstruction } = req.body;
-    if (!process.env.GEMINI_API_KEY) {
-      return res.status(400).json({ error: "GEMINI_API_KEY is not configured" });
-    }
-    
-    const response = await ai.models.generateContent({ 
-      model: "gemini-1.5-flash",
-      contents: prompt,
-      config: {
-        systemInstruction,
-      },
-    });
-
-    res.json({ text: response.text });
-  } catch (error: any) {
-    console.error("Gemini error:", error);
-    let details = error.message;
-    const errorStr = JSON.stringify(error);
-    if (error.status === 429 || errorStr.includes("429") || error.message?.includes("quota") || error.message?.includes("RESOURCE_EXHAUSTED")) {
-      details = "LIMITE DE COTAS (QUOTA) ATINGIDO no Gemini. Aguarde alguns minutos ou mude seu plano.";
-    }
-    res.status(500).json({ error: "Erro de IA", details: details });
-  }
-});
-
-app.post("/api/phantom/search", async (req, res) => {
-  try {
-    const { query } = req.body;
-    if (!query) return res.status(400).json({ error: "Query is required" });
-    
-    if (!process.env.GEMINI_API_KEY) {
-      return res.status(400).json({ error: "GEMINI_API_KEY is not configured" });
-    }
-
-    console.log(`[PHANTOM] Starting AI Search for: ${query}`);
-
-    const response = await ai.models.generateContent({
-      model: "gemini-1.5-flash",
-      contents: `Encontre 10 leads de empresas para a pesquisa: "${query}". 
-      Extraia o máximo de detalhes possível (Nome, Telefone, Site, Endereço).
-      
-      Retorne APENAS um JSON Array de objetos:
-      [{ "name": "...", "phone": "...", "email": "...", "site": "...", "rating": 5, "address": "..." }]`,
-      config: {
-        tools: [{ googleSearch: {} }],
-        responseMimeType: "application/json",
-      },
-    });
-
-    const text = response.text || "[]";
-    const leads = JSON.parse(text);
-    res.json(leads);
-  } catch (error: any) {
-    console.error("[PHANTOM ERROR]:", error);
-    
-    let details = error.message;
-    const errorStr = JSON.stringify(error);
-    if (error.status === 429 || errorStr.includes("429") || error.message?.includes("quota") || error.message?.includes("RESOURCE_EXHAUSTED")) {
-      details = "LIMITE DE COTAS (QUOTA) ATINGIDO no Gemini. Aguarde alguns minutos ou mude seu plano na conta Google AI Studio.";
-    }
-
-    res.status(500).json({ 
-      error: "Erro na Navegação Fantasma", 
-      details: details 
-    });
-  }
-});
-
-app.post("/api/dork/extract", async (req, res) => {
-  try {
-    const { content } = req.body;
-    if (!content) {
-      return res.status(400).json({ error: "Content is required" });
-    }
-
-    if (!process.env.GEMINI_API_KEY) {
-      return res.status(400).json({ error: "GEMINI_API_KEY is not configured" });
-    }
-
-    const response = await ai.models.generateContent({ 
-      model: "gemini-1.5-flash",
-      contents: `Extraia os leads deste conteúdo:\n\n${content.substring(0, 50000)}`,
-      config: {
-        systemInstruction: `Você é um extrator de leads de alta precisão.
-Analise o conteúdo HTML ou Texto de uma página de resultados do Google (obtido via Dork).
-Extraia: Nome da Empresa, Telefone, Email, Site.
-A classificação (rating) deve ser estimada com base no contexto ou 0 se não houver.
-
-Retorne APENAS um JSON Array de objetos:
-[{ "name": "...", "phone": "...", "email": "...", "site": "...", "rating": 0, "address": "..." }]
-Remova marcas de formatação de markdown.`,
-      }
-    });
-
-    const text = response.text || "[]";
-    
-    // Clean JSON response (sometimes Gemini adds ```json ... ```)
-    const jsonMatch = text.match(/\[.*\]/s);
-    const cleanJson = jsonMatch ? jsonMatch[0] : text;
-    
-    const extractedLeads = JSON.parse(cleanJson);
-    res.json(extractedLeads);
-  } catch (error: any) {
-    console.error("Dork Extract error:", error);
-    let details = error.message;
-    const errorStr = JSON.stringify(error);
-    if (error.status === 429 || errorStr.includes("429") || error.message?.includes("quota") || error.message?.includes("RESOURCE_EXHAUSTED")) {
-      details = "LIMITE DE COTAS (QUOTA) ATINGIDO no Gemini. Aguarde alguns minutos.";
-    }
-    res.status(500).json({ error: "Erro na Extração Dork", details: details });
-  }
-});
-
-// Proxy Google Places API
-app.get("/api/maps/search", async (req, res) => {
-  try {
-    const { query } = req.query;
-    if (!query) {
-      return res.status(400).json({ error: "Search query is required" });
-    }
-
-    // Busca pública independente: não usa Google, Gemini, Ghost ou login.
-    const publicSearch = await axios.get("https://photon.komoot.io/api/", {
-      params: { q: String(query).replace(/\bpadarias\b/gi, "padaria").replace(/\bclínicas\b/gi, "clínica").replace(/\bacademias\b/gi, "academia"), limit: 10 },
-      headers: { "User-Agent": "Olho-de-Deus/1.0 (lead-search)" },
-    });
-    const publicResults = (publicSearch.data?.features || []).map((item: any) => {
-      const p = item.properties || {};
-      return {
-        place_id: `osm:${p.osm_type || "feature"}:${p.osm_id || Math.random()}`,
-        name: p.name || "Empresa encontrada",
-        formatted_address: [p.street, p.housenumber, p.city, p.state, p.country].filter(Boolean).join(", "),
-        rating: 0,
-      };
-    });
-    return res.json(publicResults);
-
-    const apiKey = process.env.GOOGLE_MAPS_API_KEY;
-    if (!apiKey) {
-      const fallback = await axios.get("https://photon.komoot.io/api/", {
-        params: { q: String(query).replace(/\bpadarias\b/gi, "padaria").replace(/\bclínicas\b/gi, "clínica").replace(/\bacademias\b/gi, "academia"), limit: 10 },
-        headers: { "User-Agent": "Olho-de-Deus/1.0 (lead-search)" },
-      });
-      return res.json((fallback.data?.features || []).map((item: any) => {
-        const p = item.properties || {};
-        return {
-          place_id: `osm:${p.osm_type || "feature"}:${p.osm_id || Math.random()}`,
-          name: p.name || "Local encontrado",
-          formatted_address: [p.street, p.housenumber, p.city, p.state, p.country].filter(Boolean).join(", "),
-          rating: 0,
-        };
-      }));
-    }
-
-    console.log(`[MAPS] Searching (New API) for: ${query}`);
-    
-    const response = await axios.post(
-      `https://places.googleapis.com/v1/places:searchText`,
-      { textQuery: query as string, languageCode: 'pt-BR' },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Goog-Api-Key': apiKey,
-          'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.rating'
-        }
-      }
-    );
-
-    const places = response.data.places || [];
-    console.log(`[MAPS] Found ${places.length} results`);
-    
-    // Map to legacy format for frontend compatibility
-    const results = places.map((p: any) => ({
-      place_id: p.id,
-      name: p.displayName?.text,
-      formatted_address: p.formattedAddress,
-      rating: p.rating
-    }));
-    
-    res.json(results);
-  } catch (error: any) {
-    const errorData = error.response?.data;
-    console.error("[MAPS SEARCH ERROR]:", JSON.stringify(errorData || error.message, null, 2));
-
-    // Fallback público: se o Google Places não estiver habilitado, ainda entregamos
-    // resultados reais do OpenStreetMap para a busca não ficar travada.
-    try {
-      const fallback = await axios.get("https://photon.komoot.io/api/", {
-        params: { q: String(req.query.query).replace(/\bpadarias\b/gi, "padaria").replace(/\bclínicas\b/gi, "clínica").replace(/\bacademias\b/gi, "academia"), limit: 10 },
-        headers: { "User-Agent": "Olho-de-Deus/1.0 (lead-search)" },
-      });
-      const fallbackResults = (fallback.data?.features || []).map((item: any) => {
-        const p = item.properties || {};
-        return {
-          place_id: `osm:${p.osm_type || "feature"}:${p.osm_id || Math.random()}`,
-          name: p.name || "Local encontrado",
-          formatted_address: [p.street, p.housenumber, p.city, p.state, p.country].filter(Boolean).join(", "),
-          rating: 0,
-        };
-      });
-      if (fallbackResults.length) {
-        console.log(`[MAPS FALLBACK] Found ${fallbackResults.length} results via OpenStreetMap`);
-        return res.json(fallbackResults);
-      }
-    } catch (fallbackError: any) {
-      console.error("[MAPS FALLBACK ERROR]:", fallbackError.message);
-    }
-    
-    // Extract a more useful message if it's a Google RPC error
-    let details = error.message;
-    if (errorData?.error) {
-      details = errorData.error.message || JSON.stringify(errorData.error);
-      if (JSON.stringify(errorData).includes("SERVICE_DISABLED")) {
-        details = "A 'Places API (New)' não está ativada no seu console Google Cloud. Ative-a para continuar.";
-      } else if (JSON.stringify(errorData).includes("API_KEY_INVALID")) {
-        details = "A sua GOOGLE_MAPS_API_KEY é inválida ou expirou.";
-      }
-    }
-
-    res.status(500).json({ 
-      error: "Erro na Pesquisa de Mapas", 
-      details: details 
-    });
-  }
-});
-
-app.get("/api/maps/details", async (req, res) => {
-  try {
-    const { placeId } = req.query;
-    if (!placeId) {
-      return res.status(400).json({ error: "placeId is required" });
-    }
-
-    const apiKey = process.env.GOOGLE_MAPS_API_KEY;
-    if (!apiKey) {
-      return res.status(503).json({
-        error: "Detalhes de mapas indisponíveis",
-        details: "Configure GOOGLE_MAPS_API_KEY no servidor para ativar esta fonte.",
-      });
-    }
-
-    console.log(`[MAPS] Fetching Details for: ${placeId}`);
-    
-    const response = await axios.get(
-      `https://places.googleapis.com/v1/places/${placeId}`,
-      {
-        headers: {
-          'X-Goog-Api-Key': apiKey,
-          'X-Goog-FieldMask': 'id,displayName,formattedAddress,nationalPhoneNumber,websiteUri,rating'
-        }
-      }
-    );
-
-    const p = response.data;
-    // Map to legacy format for frontend compatibility
-    const result = {
-      name: p.displayName?.text,
-      formatted_phone_number: p.nationalPhoneNumber || p.internationalPhoneNumber || "Não Encontrado",
-      website: p.websiteUri || "Não Encontrado",
-      formatted_address: p.formattedAddress,
-      rating: p.rating
-    };
-
-    res.json(result);
-  } catch (error: any) {
-    const errorData = error.response?.data;
-    console.error("[MAPS DETAILS ERROR]:", JSON.stringify(errorData || error.message, null, 2));
-
-    let details = error.message;
-    if (errorData?.error) {
-      details = errorData.error.message || JSON.stringify(errorData.error);
-      if (JSON.stringify(errorData).includes("SERVICE_DISABLED")) {
-        details = "A 'Places API (New)' não está ativada no seu console Google Cloud.";
-      }
-    }
-
-    res.status(500).json({ 
-      error: "Erro nos Detalhes do Lead", 
-      details: details
-    });
-  }
-});
-
-// Vite middleware for development
-async function setupVite() {
-  if (process.env.NODE_ENV !== "production") {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: "spa",
-    });
-    app.use(vite.middlewares);
-  } else {
-    const distPath = path.join(process.cwd(), 'dist');
-    app.use(express.static(distPath));
-    app.get('*', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
-    });
-  }
-
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-  });
+interface Lead { id: string; name: string; address: string; phone: string; website: string; category: string; source: string; confidence: number; status: string; }
+const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+function normalize(item: any, index: number): Lead {
+  const p = item.properties || {};
+  const name = String(p.name || p.operator || "Local sem nome").trim();
+  const address = [p.street, p.housenumber, p.city, p.state, p.country].filter(Boolean).join(", ") || "Endereço não informado";
+  const phone = String(p.phone || p.contact?.phone || "").trim();
+  const website = String(p.website || p.contact?.website || "").trim();
+  const category = String(p.osm_value || p.type || "empresa").trim();
+  const fields = [name !== "Local sem nome", address !== "Endereço não informado", Boolean(phone), Boolean(website)].filter(Boolean).length;
+  return { id: `osm:${p.osm_type || "feature"}:${p.osm_id || index}`, name, address, phone, website, category, source: "OpenStreetMap / Photon", confidence: Math.round(45 + fields * 13.75), status: "Novo" };
 }
+function dedupe(leads: Lead[]) { const seen = new Set<string>(); return leads.filter(l => { const key = `${l.name.toLowerCase()}|${l.address.toLowerCase()}`; if (seen.has(key)) return false; seen.add(key); return true; }); }
+async function collect(query: string): Promise<Lead[]> {
+  const response = await axios.get("https://photon.komoot.io/api/", { params: { q: query.slice(0, 180), limit: 20, lang: "pt" }, headers: { "User-Agent": "OlhoDeDeus/2.0 (public-osint; contact: lead-search)" }, timeout: 12000 });
+  return dedupe((response.data?.features || []).map(normalize));
+}
+async function pipeline(query: string, emit: (stage: string, message: string, count?: number) => void) {
+  emit("coordenador", "Coordenador preparando a captura"); await wait(180);
+  emit("coleta", "Buscando em fontes públicas");
+  let leads: Lead[] = [];
+  try { leads = await collect(query); } catch (error) { console.warn("public source unavailable", error); }
+  emit("normalizacao", "Normalizando nomes e endereços", leads.length); await wait(180);
+  leads = leads.map((l, i) => ({ ...l, id: l.id || `lead:${i}` }));
+  emit("deduplicacao", "Removendo registros repetidos", leads.length); await wait(180);
+  leads = dedupe(leads);
+  emit("verificacao", "Verificando campos públicos e origem", leads.length); await wait(180);
+  leads = leads.map(l => ({ ...l, status: l.confidence >= 70 ? "Verificado" : "Revisar" }));
+  emit("score", "Calculando score de confiança", leads.length); await wait(180);
+  leads.sort((a, b) => b.confidence - a.confidence);
+  emit("finalizando", "Organizando leads na tabela local", leads.length);
+  return leads;
+}
+app.get("/health", (_req, res) => res.json({ ok: true, service: "olho-de-deus", pipeline: "osint-publico", source: "photon-osm" }));
+app.post("/api/capture", async (req, res) => {
+  const query = String(req.body?.query || "").trim();
+  if (!query) return res.status(400).json({ error: "Informe um nicho, empresa ou localidade." });
+  try { const leads = await pipeline(query, () => undefined); return res.json({ query, count: leads.length, leads }); }
+  catch { return res.status(502).json({ error: "A fonte pública não respondeu. Tente novamente em alguns instantes." }); }
+});
+app.get("/api/capture/stream", async (req, res) => {
+  const query = String(req.query.query || "").trim();
+  if (!query) return res.status(400).json({ error: "Informe um nicho, empresa ou localidade." });
+  res.setHeader("Content-Type", "text/event-stream"); res.setHeader("Cache-Control", "no-cache"); res.setHeader("Connection", "keep-alive");
+  const send = (payload: any) => res.write(`data: ${JSON.stringify(payload)}\n\n`);
+  try { const leads = await pipeline(query, (stage, message, count) => send({ type: "progress", stage, message, count })); send({ type: "complete", query, count: leads.length, leads }); }
+  catch { send({ type: "error", message: "A fonte pública não respondeu. Tente novamente." }); }
+  res.end();
+});
 
+async function setupVite() {
+  if (process.env.NODE_ENV !== "production") { const vite = await createViteServer({ server: { middlewareMode: true }, appType: "spa" }); app.use(vite.middlewares); }
+  else { const distPath = path.join(process.cwd(), "dist"); app.use(express.static(distPath)); app.get("*", (_req, res) => res.sendFile(path.join(distPath, "index.html"))); }
+  app.listen(PORT, "0.0.0.0", () => console.log(`Olho de Deus running on ${PORT}`));
+}
 setupVite();
