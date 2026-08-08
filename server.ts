@@ -160,10 +160,16 @@ app.get("/api/maps/search", async (req, res) => {
 
     const apiKey = process.env.GOOGLE_MAPS_API_KEY;
     if (!apiKey) {
-      return res.status(503).json({
-        error: "Pesquisa de mapas indisponível",
-        details: "Configure GOOGLE_MAPS_API_KEY no servidor para ativar esta fonte.",
+      const fallback = await axios.get("https://nominatim.openstreetmap.org/search", {
+        params: { q: String(query), format: "jsonv2", limit: 10, addressdetails: 1 },
+        headers: { "User-Agent": "Olho-de-Deus/1.0 (lead-search)" },
       });
+      return res.json((fallback.data || []).map((item: any) => ({
+        place_id: `osm:${item.osm_type}:${item.osm_id}`,
+        name: item.name || item.display_name?.split(",")[0] || "Local encontrado",
+        formatted_address: item.display_name || "Endereço não informado",
+        rating: 0,
+      })));
     }
 
     console.log(`[MAPS] Searching (New API) for: ${query}`);
@@ -195,6 +201,27 @@ app.get("/api/maps/search", async (req, res) => {
   } catch (error: any) {
     const errorData = error.response?.data;
     console.error("[MAPS SEARCH ERROR]:", JSON.stringify(errorData || error.message, null, 2));
+
+    // Fallback público: se o Google Places não estiver habilitado, ainda entregamos
+    // resultados reais do OpenStreetMap para a busca não ficar travada.
+    try {
+      const fallback = await axios.get("https://nominatim.openstreetmap.org/search", {
+        params: { q: String(req.query.query), format: "jsonv2", limit: 10, addressdetails: 1 },
+        headers: { "User-Agent": "Olho-de-Deus/1.0 (lead-search)" },
+      });
+      const fallbackResults = (fallback.data || []).map((item: any) => ({
+        place_id: `osm:${item.osm_type}:${item.osm_id}`,
+        name: item.name || item.display_name?.split(",")[0] || "Local encontrado",
+        formatted_address: item.display_name || "Endereço não informado",
+        rating: 0,
+      }));
+      if (fallbackResults.length) {
+        console.log(`[MAPS FALLBACK] Found ${fallbackResults.length} results via OpenStreetMap`);
+        return res.json(fallbackResults);
+      }
+    } catch (fallbackError: any) {
+      console.error("[MAPS FALLBACK ERROR]:", fallbackError.message);
+    }
     
     // Extract a more useful message if it's a Google RPC error
     let details = error.message;
