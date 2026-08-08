@@ -218,9 +218,8 @@ export default function LeadDashboard({ token, userEmail }: DashboardProps) {
     }
 
     if (!finalQuery) return;
-    // A pesquisa não fica bloqueada: criamos a planilha automaticamente quando necessário.
-    const targetSpreadsheetId = spreadsheetId || await handleCreateSheet();
-    if (!targetSpreadsheetId) return;
+    // Modo local: os resultados ficam na tabela da plataforma até a exportação.
+    const targetSpreadsheetId = spreadsheetId;
     setIsSearching(true);
     setHasRepairableError(false);
     setSystemStatus("Iniciando Protocolo de Varredura...");
@@ -278,10 +277,14 @@ export default function LeadDashboard({ token, userEmail }: DashboardProps) {
         detailedLeads.push(...chunkResults);
       }
 
-      setSystemStatus("Sincronizando com G-Sheets Cloud...");
-      await appendToSheet(targetSpreadsheetId, `${sheetName}!A:E`, detailedLeads, token);
-      
-      await fetchLeadsFromSheet();
+      if (targetSpreadsheetId && token) {
+        setSystemStatus("Salvando na planilha conectada...");
+        await appendToSheet(targetSpreadsheetId, `${sheetName}!A:E`, detailedLeads, token);
+        await fetchLeadsFromSheet();
+      } else {
+        const localLeads = detailedLeads.map((row: any[], index: number) => mapRowToLead(row, index));
+        setLeads(localLeads);
+      }
       setSystemStatus(`Sucesso: ${detailedLeads.length} leads processados.`);
       handleNewExtraction();
       setActiveTab("leads");
@@ -312,8 +315,7 @@ export default function LeadDashboard({ token, userEmail }: DashboardProps) {
     }
 
     if (!finalQuery) return;
-    const targetSpreadsheetId = spreadsheetId || await handleCreateSheet();
-    if (!targetSpreadsheetId) return;
+    const targetSpreadsheetId = spreadsheetId;
     setIsSearching(true);
     setSystemStatus("Navegação Fantasma: Ignorando APIs...");
     
@@ -340,9 +342,18 @@ export default function LeadDashboard({ token, userEmail }: DashboardProps) {
         ];
       });
 
-      setSystemStatus("Sincronizando Leads Ghost...");
-      await appendToSheet(targetSpreadsheetId, `${sheetName}!A:E`, newLeadsValues, token);
-      await fetchLeadsFromSheet();
+      if (targetSpreadsheetId && token) {
+        setSystemStatus("Salvando na planilha conectada...");
+        await appendToSheet(targetSpreadsheetId, `${sheetName}!A:E`, newLeadsValues, token);
+        await fetchLeadsFromSheet();
+      } else {
+        setLeads(extractedLeads.map((lead: any, index: number) => ({
+          id: String(index + 1), name: lead.name || "Empresa Fantasma", phone: lead.phone || "Sem Tel",
+          email: lead.email || "Sem Email", site: lead.site || "Sem Site", rating: lead.rating || 0,
+          status: "PENDENTE", address: lead.address || "Localização via Grounding",
+          raw: `${lead.name || "Empresa Fantasma"}|${lead.phone || "Sem Tel"}|${lead.email || "Sem Email"}|${lead.site || "Sem Site"}|${lead.rating || 0}`
+        })));
+      }
       
       setSystemStatus(`Sucesso: ${extractedLeads.length} leads processados.`);
       handleNewExtraction();
@@ -618,6 +629,28 @@ function DorkHunterProcess(html) {
     setSystemStatus("Exportado TXT");
   };
 
+  const exportToCSV = () => {
+    if (!leads.length) return;
+    const headers = ["Empresa", "Telefone", "E-mail", "Site", "Endereço", "Avaliação", "Status"];
+    const rows = leads.map(l => [l.name, l.phone, l.email, l.site, l.address || "", String(l.rating), l.status]);
+    const csv = [headers, ...rows].map(row => row.map(value => `"${String(value).replace(/"/g, '""')}"`).join(",")).join("\\n");
+    const blob = new Blob(["\\ufeff" + csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `olho-leads-${new Date().toISOString().split("T")[0]}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    setSystemStatus("Arquivo Excel (CSV) baixado");
+  };
+
+  const openInGoogleSheets = () => {
+    if (!leads.length) return;
+    exportToCSV();
+    window.open("https://sheets.new", "_blank", "noopener,noreferrer");
+    setSystemStatus("CSV baixado: importe-o no Google Sheets");
+  };
+
   const exportToPDF = () => {
     if (!leads.length) return;
     const doc = new jsPDF();
@@ -771,22 +804,12 @@ function DorkHunterProcess(html) {
                         )}
 
                         {!spreadsheetId ? (
-                          <div className="glass bg-emerald-500/10 p-6 rounded-2xl border-2 border-emerald-500/30 flex flex-col items-center text-center gap-4">
-                            <FileSpreadsheet className="text-emerald-500" size={40} />
+                          <div className="glass bg-emerald-500/10 p-5 rounded-2xl border border-emerald-500/30 flex items-center gap-4">
+                            <Target className="text-emerald-500" size={28} />
                             <div>
-                               <h3 className="text-sm font-bold text-white uppercase italic">Configuração Pendente</h3>
-                               <p className="text-[10px] text-zinc-400 mt-1 uppercase tracking-widest px-8">
-                                 Você ainda não tem uma planilha ativa para salvar os leads.
-                               </p>
+                               <h3 className="text-sm font-bold text-white uppercase italic">Extração local ativada</h3>
+                               <p className="text-[10px] text-zinc-400 mt-1 uppercase tracking-widest">Os resultados aparecem na tabela abaixo e podem ser exportados depois.</p>
                             </div>
-                            <button 
-                              onClick={handleCreateSheet} 
-                              disabled={isCreatingSheet}
-                              className="bg-emerald-600 text-black px-6 py-3 rounded-lg font-bold uppercase tracking-widest text-[10px] hover:bg-emerald-500 transition-all shadow-lg shadow-emerald-500/10"
-                            >
-                              {isCreatingSheet ? "Criando agora..." : "🚀 Criar Planilha Automaticamente (Recomendado)"}
-                            </button>
-                            <p className="text-[9px] text-zinc-600 italic">Isso criará uma planilha "Base de Leads" no seu Google Drive.</p>
                           </div>
                         ) : (
                           <div className={cn(
@@ -957,17 +980,14 @@ function DorkHunterProcess(html) {
                   <motion.div key="leads" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full flex flex-col p-2">
                     <div className="flex justify-between items-center p-4 border-b border-white/5 bg-black/10">
                       <div className="flex gap-2">
-                         <button 
-                           onClick={exportToTXT}
-                           className="bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 border border-white/5"
-                         >
-                           <FileSpreadsheet size={14} /> TXT
+                         <button onClick={exportToCSV} className="bg-white/5 hover:bg-white/10 text-zinc-300 px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 border border-white/5">
+                           <FileSpreadsheet size={14} /> Excel / CSV
                          </button>
-                         <button 
-                           onClick={exportToPDF}
-                           className="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 border border-emerald-500/10"
-                         >
+                         <button onClick={exportToPDF} className="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 border border-emerald-500/10">
                            <Mail size={14} /> PDF
+                         </button>
+                         <button onClick={openInGoogleSheets} className="bg-blue-500/10 hover:bg-blue-500/20 text-blue-300 px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all border border-blue-500/10">
+                           Abrir Google Sheets
                          </button>
                       </div>
                       <div className="text-[10px] text-zinc-600 font-mono italic">Protocolo de Extração Seguro</div>
