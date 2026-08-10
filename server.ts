@@ -49,7 +49,7 @@ function absolute(href: string, base: string) { try { return new URL(href, base)
 function textOf(html: string) { return html.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>|<noscript[\s\S]*?<\/noscript>/gi," ").replace(/<[^>]+>/g," ").replace(/&nbsp;|&#160;/gi," ").replace(/&amp;/gi,"&").replace(/\s+/g," ").trim(); }
 function extract(html: string, url: string) {
   const text = textOf(html);
-  const phones = Array.from(new Set((text.match(/(?:\+?\d[\d ()().-]{7,}\d)/g) || []).map(x => x.trim()).filter(x => x.replace(/\D/g,"").length >= 8))).slice(0,5);
+  const phones = Array.from(new Set((text.match(/(?:\+?\d[\d ()().-]{7,}\d)/g) || []).map(x => x.trim()).filter(x => { const digits = x.replace(/\D/g, ""); return digits.length >= 10 && digits.length <= 13; }))).slice(0,5);
   const emails = Array.from(new Set((text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi) || []).map(x => x.toLowerCase()))).filter(x => !x.includes("example.")).slice(0,5);
   const socials = Array.from(new Set((html.match(/https?:\/\/[^"'<> ]+\/(?:instagram|facebook|linkedin|tiktok|youtube)[^"'<> ]*/gi) || []).map(x => x.replace(/&amp;/g,"&")))).slice(0,8);
   // Only accept a name when a page explicitly labels it as owner/partner/director/contact.
@@ -79,7 +79,7 @@ async function ddgSites(lead: Lead) {
 }
 async function enrichLead(lead: Lead) {
   let candidates = lead.website ? [cleanUrl(lead.website)] : []; if (!candidates[0]) candidates = await ddgSites(lead);
-  for (const candidate of candidates.slice(0,3)) { if (!candidate || !(await robotsAllowed(candidate))) continue; try {
+  for (const candidate of candidates.slice(0,3)) { if (!candidate || /city-data\.com|reddit\.com|pinterest\.com|forum/i.test(candidate) || !(await robotsAllowed(candidate))) continue; try {
       const r = await axios.get(candidate, { headers: { "User-Agent": UA, Accept: "text/html" }, timeout: 9000, maxContentLength: 800000, validateStatus: s => s >= 200 && s < 400 });
       const x = extract(String(r.data), candidate); lead.website = candidate; lead.phone ||= x.phones[0] || ""; lead.email ||= x.emails[0] || ""; lead.socials = Array.from(new Set([...lead.socials, ...x.socials]));
       if (x.names[0]) { lead.contactName = x.names[0]; lead.responsibleName = x.names[0]; }
