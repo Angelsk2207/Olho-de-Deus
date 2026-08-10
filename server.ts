@@ -36,6 +36,14 @@ async function collect(query: string): Promise<Lead[]> {
   return dedupe((r.data?.features || []).map(normalize));
 }
 function cleanUrl(raw: string) { try { const u = new URL(raw); if (!["http:","https:"].includes(u.protocol)) return ""; return u.toString(); } catch { return ""; } }
+function resolveSearchUrl(raw: string) {
+  try {
+    const u = new URL(raw);
+    const encoded = u.searchParams.get("u");
+    if (encoded?.startsWith("a1")) return cleanUrl(Buffer.from(encoded.slice(2), "base64").toString("utf8"));
+    return cleanUrl(raw);
+  } catch { return ""; }
+}
 function absolute(href: string, base: string) { try { return new URL(href, base).toString(); } catch { return ""; } }
 function textOf(html: string) { return html.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>|<noscript[\s\S]*?<\/noscript>/gi," ").replace(/<[^>]+>/g," ").replace(/&nbsp;|&#160;/gi," ").replace(/&amp;/gi,"&").replace(/\s+/g," ").trim(); }
 function extract(html: string, url: string) {
@@ -63,8 +71,8 @@ async function ddgSites(lead: Lead) {
   // Bing's public HTML is a keyless fallback when DDG serves a challenge page.
   if (!found.length) try {
     const r=await axios.get("https://www.bing.com/search",{params:{q:query.slice(0,220)},headers:{"User-Agent":UA},timeout:10000});
-    const re=/<li class="b_algo"[\s\S]*?<h2><a[^>]+href="([^"]+)/gi; let m;
-    while((m=re.exec(String(r.data)))&&found.length<5){const u=cleanUrl(m[1]);if(u&&!/bing\.com|youtube\.com|wikipedia\.org/i.test(u))found.push(u);}
+    const re=/<li[^>]*class="b_algo"[\s\S]*?<h2[^>]*>\s*<a[^>]+href="([^"]+)/gi; let m;
+    while((m=re.exec(String(r.data)))&&found.length<5){const u=resolveSearchUrl(m[1]);if(u&&!/bing\.com|youtube\.com|wikipedia\.org/i.test(u))found.push(u);}
   } catch {}
   return found;
 }
