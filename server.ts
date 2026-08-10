@@ -38,6 +38,7 @@ async function collect(query: string): Promise<Lead[]> {
 function cleanUrl(raw: string) { try { const u = new URL(raw); if (!["http:","https:"].includes(u.protocol)) return ""; return u.toString(); } catch { return ""; } }
 function resolveSearchUrl(raw: string) {
   try {
+    raw = raw.replace(/&amp;/gi, "&");
     const u = new URL(raw);
     const encoded = u.searchParams.get("u");
     if (encoded?.startsWith("a1")) return cleanUrl(Buffer.from(encoded.slice(2), "base64").toString("utf8"));
