@@ -138,3 +138,21 @@ Consulta do usuário → Fontes públicas permitidas → Coleta mínima
 → Aprovação humana → Ação autorizada → Auditoria
 ```
 
+## Airtable como base operacional
+
+O Airtable será a base operacional do Olho de Deus para persistir leads, evidências, briefings, análises, status e histórico. A interface do Olho de Deus continua exibindo os dados de forma amigável; o Airtable funciona como armazenamento, consulta e auditoria, não como uma tela obrigatória para o cliente.
+
+Tabela criada: **Olho de Deus - Prospects**. Ela separa negócios e oportunidades das tabelas de vagas, clientes e códigos já existentes.
+
+### Sincronização
+
+- nova descoberta OSINT → registro ou atualização no Airtable;
+- alteração no CRM → atualização sincronizada na interface;
+- briefing da conversa → salvo no prospect;
+- evidência, fonte e data → preservadas para auditoria;
+- duplicidades → consolidadas sem apagar histórico;
+- informações desatualizadas → marcadas para nova verificação;
+- exclusão ou correção → refletida nos dois lados.
+
+A pessoa continua vendo no Olho de Deus os dados, fontes, score, briefing, status e histórico. O Airtable fica como base de persistência e controle interno, com credenciais mantidas somente no backend.
+
