@@ -31,3 +31,28 @@ Agentes especializados podem pesquisar, normalizar, deduplicar, analisar e atual
 
 A arquitetura prioriza fontes públicas, conformidade com a LGPD, minimização de dados, segurança, trilha de auditoria e separação entre descoberta, análise e contato.
 
+## Assistente conversacional de negócios
+
+O Olho de Deus também funciona como um assistente conversacional para empresas e profissionais que não dominam marketing. A conversa transforma linguagem simples em um briefing estruturado, identifica objetivos, público, oferta, dificuldades, prioridades e próximos passos.
+
+### Capacidades do assistente
+
+- conversa guiada, sem exigir conhecimento técnico de marketing;
+- criação automática de briefing a partir do diálogo;
+- perguntas de esclarecimento somente quando necessário;
+- diagnóstico comercial e de comunicação baseado em evidências;
+- recomendações priorizadas para oferta, posicionamento, conteúdo, atendimento, arte, vídeo e jornada de conversão;
+- geração de tarefas, calendário, textos, roteiros e direcionamentos visuais;
+- execução de ações aprovadas pelo responsável;
+- acompanhamento do que foi feito, do que está pendente e do que precisa ser revisado.
+
+### Continuidade entre celular e computador
+
+A conversa e o briefing devem permanecer sincronizados entre dispositivos por meio de um backend seguro. O celular e o computador funcionam como interfaces; o processamento, a memória do projeto, os agentes especializados e o histórico ficam em serviços cloud.
+
+### Execução com aprovação
+
+O assistente pode analisar, preparar e simular ações automaticamente. Mensagens, publicações, alterações em dados, campanhas e qualquer ação externa exigem confirmação explícita. Depois da aprovação, o agente executa, valida o resultado e registra a atividade no CRM.
+
+O sistema deve separar: conversa, briefing, diagnóstico, recomendação, aprovação, execução e auditoria. Assim, a pessoa consegue conversar em linguagem natural e transformar a conversa em trabalho real sem perder controle.
+
