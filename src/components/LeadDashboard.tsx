@@ -5,6 +5,7 @@ const stages=["coordenador","coleta","normalizacao","enriquecimento","finalizand
 const tools=[
  {id:"busca",title:"Busca unificada",desc:"Comece com nome, empresa, domínio, telefone ou cidade.",icon:Search,tone:"mint",links:["https://www.start.me/","https://duckduckgo.com/"]},
  {id:"cnpj",title:"Empresas / CNPJ",desc:"Valide razão social e situação em cadastros públicos.",icon:Building2,tone:"blue",links:["https://consultacnpj.redesim.gov.br/","https://solucoes.receita.fazenda.gov.br/servicos/cnpjreva/cnpjreva_solicitacao.asp"]},
+ {id:"casadosdados",title:"Casa dos Dados",desc:"Consulte documentação e fontes públicas de dados empresariais.",icon:Database,tone:"gold",links:["https://docs.casadosdados.com.br/"]},
  {id:"people",title:"Pessoas / responsáveis",desc:"Cruze nomes somente quando publicados por uma fonte verificável.",icon:UserRound,tone:"violet",links:["https://transparencia.registrocivil.org.br/"]},
  {id:"phone",title:"Telefones / WhatsApp",desc:"Normalize e confira presença pública; nunca adivinhe contatos.",icon:Phone,tone:"orange",links:["https://www.truecaller.com/"]},
  {id:"email",title:"E-mails",desc:"Consulte exposição e contexto do e-mail informado.",icon:Mail,tone:"rose",links:["https://haveibeenpwned.com/"]},
