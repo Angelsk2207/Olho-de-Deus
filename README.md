@@ -56,3 +56,50 @@ O assistente pode analisar, preparar e simular ações automaticamente. Mensagen
 
 O sistema deve separar: conversa, briefing, diagnóstico, recomendação, aprovação, execução e auditoria. Assim, a pessoa consegue conversar em linguagem natural e transformar a conversa em trabalho real sem perder controle.
 
+## Fluxograma do ecossistema
+
+```mermaid
+flowchart TD
+    U[Cliente ou responsável] --> C[Assistente conversacional]
+    C --> B[Briefing estruturado]
+    B --> D[Diagnóstico do negócio]
+    D --> R[Recomendações priorizadas]
+    R --> A{Ação externa ou alteração sensível?}
+    A -- Sim --> P[Solicitar aprovação]
+    P -- Aprovado --> X[Agente executor]
+    P -- Recusado --> H[Registrar decisão e ajustar plano]
+    A -- Não --> X
+    X --> V[Validação do resultado]
+    V --> CRM[Atualizar CRM e histórico]
+    CRM --> M[Monitoramento e radar]
+    M --> D
+    X --> S[Agentes especializados]
+    S --> V
+
+    subgraph AG[Equipe de agentes]
+      C0[Agente central]
+      S1[Pesquisa e radar]
+      S2[Análise comercial]
+      S3[Conteúdo, arte e vídeo]
+      S4[Segurança e auditoria]
+      S5[Execução e manutenção]
+    end
+    C0 --> C
+    S1 --> S
+    S2 --> S
+    S3 --> S
+    S4 --> S
+    S5 --> S
+```
+
+### Dinâmica resumida
+
+1. A pessoa conversa com o assistente.
+2. O sistema transforma a conversa em briefing.
+3. O diagnóstico identifica necessidades e oportunidades.
+4. Agentes especializados montam o plano.
+5. Ações externas aguardam aprovação.
+6. O agente executor realiza a tarefa.
+7. O resultado é validado e registrado.
+8. O radar acompanha mudanças e inicia novos ciclos.
+
