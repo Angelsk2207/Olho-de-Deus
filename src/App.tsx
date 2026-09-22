@@ -1,3 +1,4 @@
 import React from 'react';
 import LeadDashboard from './components/LeadDashboard';
-export default function App() { return <LeadDashboard />; }
+import EcosystemFlow from './components/EcosystemFlow';
+export default function App() { return <><EcosystemFlow /><LeadDashboard /></>; }
