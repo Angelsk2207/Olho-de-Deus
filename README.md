@@ -103,3 +103,38 @@ flowchart TD
 7. O resultado é validado e registrado.
 8. O radar acompanha mudanças e inicia novos ciclos.
 
+## Camada OSINT responsável + orquestrador Jarvis
+
+O Olho de Deus usa OSINT como base para reunir, organizar e analisar informações públicas e legalmente acessíveis sobre negócios e oportunidades. O objetivo não é coletar “tudo” indiscriminadamente, mas encontrar dados relevantes, verificar a origem e apresentar evidências compreensíveis.
+
+### Orquestrador genérico
+
+Uma camada de orquestração no estilo Jarvis coordena tarefas e encaminha cada etapa ao agente adequado: busca pública, validação de empresa, análise comercial, CRM, conteúdo, segurança e execução autorizada. O orquestrador não deve agir como uma caixa-preta: cada resultado informa fonte, data, finalidade, confiança e limitações.
+
+### Dados empresariais permitidos
+
+- nome empresarial e nome fantasia;
+- CNPJ quando obtido de fonte pública e pertinente;
+- situação cadastral e atividade econômica em fonte oficial;
+- endereço comercial e canais de contato publicados pela própria empresa;
+- site, redes sociais, avaliações e sinais públicos de presença digital;
+- notícias, editais, portais públicos e informações comerciais relevantes;
+- relações e evidências necessárias para qualificar uma oportunidade B2B.
+
+### Proteção de pessoas físicas
+
+CPF, dados pessoais sensíveis, informações financeiras, credenciais, vazamentos, localização privada e perfis invasivos não fazem parte de uma coleta automática. Qualquer validação de pessoa física deve ter finalidade legítima, necessidade, base legal e consentimento quando aplicável. O sistema não deve buscar, cruzar ou expor dados pessoais apenas porque estão disponíveis na internet.
+
+### Regras de segurança
+
+O módulo OSINT não acessa contas privadas, não burla CAPTCHA ou autenticação, não compra bases vazadas, não faz doxxing, não realiza vigilância de pessoas e não envia contato automaticamente. Ações externas e uso de dados em prospecção exigem aprovação do responsável.
+
+### Pipeline
+
+```text
+Consulta do usuário → Fontes públicas permitidas → Coleta mínima
+→ Normalização → Deduplicação → Verificação de origem
+→ Score de confiança → Análise de aderência → CRM
+→ Aprovação humana → Ação autorizada → Auditoria
+```
+
