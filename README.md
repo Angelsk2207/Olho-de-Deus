@@ -31,6 +31,10 @@ Agentes especializados podem pesquisar, normalizar, deduplicar, analisar e atual
 
 A arquitetura prioriza fontes públicas, conformidade com a LGPD, minimização de dados, segurança, trilha de auditoria e separação entre descoberta, análise e contato.
 
+## Mapa interativo de agentes
+
+A interface conversacional inclui um organograma clicável em [`src/components/AgentArchitecture.tsx`](src/components/AgentArchitecture.tsx); a arquitetura e o estado real dos módulos estão descritos em [`docs/architecture/agent-organogram.md`](docs/architecture/agent-organogram.md). No momento, apenas o pipeline OSINT existente é um backend comprovado; os outros agentes e serviços listados no mapa são planejados.
+
 ## Assistente conversacional de negócios
 
 O Olho de Deus também funciona como um assistente conversacional para empresas e profissionais que não dominam marketing. A conversa transforma linguagem simples em um briefing estruturado, identifica objetivos, público, oferta, dificuldades, prioridades e próximos passos.
